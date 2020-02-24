@@ -26,7 +26,7 @@ var parseBenchmarksTests = map[string]struct {
 			`,
 		expectedBenchmarks: []Benchmark{
 			{
-				name: "BenchmarkMath",
+				Name: "BenchmarkMath",
 				results: []benchRes{
 					{
 						inputs: benchInputs{
@@ -114,7 +114,7 @@ var groupResultsTests = map[string]struct {
 }{
 	"group_by_1_string_var": {
 		benchmark: Benchmark{
-			name: "BenchmarkMath",
+			Name: "BenchmarkMath",
 			results: []benchRes{
 				{
 					inputs: benchInputs{
@@ -208,7 +208,7 @@ var groupResultsTests = map[string]struct {
 	},
 	"group_by_2_vars": {
 		benchmark: Benchmark{
-			name: "BenchmarkMath",
+			Name: "BenchmarkMath",
 			results: []benchRes{
 				{
 					inputs: benchInputs{
@@ -430,7 +430,7 @@ func TestSplitGroupedResults(t *testing.T) {
 }
 
 var sampleBenchmark = Benchmark{
-	name: "BenchmarkMath",
+	Name: "BenchmarkMath",
 	results: []benchRes{
 		{
 			inputs: benchInputs{

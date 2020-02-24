@@ -107,7 +107,7 @@ func (b benchRes) splitTo(xName, yName string) (splitRes, error) {
 
 // Benchmark represents a single benchmark and it's results
 type Benchmark struct {
-	name    string
+	Name    string
 	results []benchRes
 }
 
@@ -137,7 +137,7 @@ func (b Benchmark) groupResults(groupBy []string) groupedResults {
 // PlotScatter plots the benchmark results as a scatter plot
 func (b Benchmark) PlotScatter(p plot.Plotter, groupBy []string, xName, yName string) error {
 	var (
-		title  = b.name
+		title  = b.Name
 		xLabel = xName
 		yLabel = yName // TODO: include units
 	)
@@ -227,7 +227,7 @@ func ParseBenchmarks(r io.Reader) ([]Benchmark, error) {
 		}
 		bench, ok := benchmarks[benchName]
 		if !ok {
-			bench = Benchmark{name: benchName, results: []benchRes{}}
+			bench = Benchmark{Name: benchName, results: []benchRes{}}
 		}
 
 		outputs := benchOutputs{
