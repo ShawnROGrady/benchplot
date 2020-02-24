@@ -1,4 +1,4 @@
-package main
+package benchmark
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 
 var parseBenchmarksTests = map[string]struct {
 	resultSet          string
-	expectedBenchmarks []benchmark
+	expectedBenchmarks []Benchmark
 	expectErr          bool
 }{
 	"1_bench_2_subs": {
@@ -21,7 +21,7 @@ var parseBenchmarksTests = map[string]struct {
 			BenchmarkMath/max/y=sin(x)/delta=1.000000/start_x=-1/end_x=2-4                            	16381138	        62.7 ns/op	       0 B/op	       0 allocs/op
 			PASS
 			`,
-		expectedBenchmarks: []benchmark{
+		expectedBenchmarks: []Benchmark{
 			{
 				name: "BenchmarkMath",
 				results: []benchRes{
@@ -85,7 +85,7 @@ func TestParseBencharks(t *testing.T) {
 	for testName, testCase := range parseBenchmarksTests {
 		t.Run(testName, func(t *testing.T) {
 			b := bytes.NewReader([]byte(testCase.resultSet))
-			benchmarks, err := parseBenchmarks(b)
+			benchmarks, err := ParseBenchmarks(b)
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)
@@ -105,12 +105,12 @@ func TestParseBencharks(t *testing.T) {
 }
 
 var groupResultsTests = map[string]struct {
-	benchmark              benchmark
+	benchmark              Benchmark
 	groupBy                []string
 	expectedGroupedResults groupedResults
 }{
 	"group_by_1_string_var": {
-		benchmark: benchmark{
+		benchmark: Benchmark{
 			name: "BenchmarkMath",
 			results: []benchRes{
 				{
@@ -204,7 +204,7 @@ var groupResultsTests = map[string]struct {
 		},
 	},
 	"group_by_2_vars": {
-		benchmark: benchmark{
+		benchmark: Benchmark{
 			name: "BenchmarkMath",
 			results: []benchRes{
 				{

@@ -1,4 +1,4 @@
-package main
+package benchmark
 
 import (
 	"bufio"
@@ -103,12 +103,13 @@ func (b benchRes) splitTo(xName, yName string) (splitRes, error) {
 	return splitRes, nil
 }
 
-type benchmark struct {
+// Benchmark represents a single benchmark and it's results
+type Benchmark struct {
 	name    string
 	results []benchRes
 }
 
-func (b benchmark) groupResults(groupBy []string) groupedResults {
+func (b Benchmark) groupResults(groupBy []string) groupedResults {
 	groupedResults := map[string][]benchRes{}
 	for _, result := range b.results {
 		groupVals := benchVarValues{}
@@ -149,10 +150,11 @@ func (g groupedResults) splitTo(xName, yName string) (map[string][]splitRes, err
 	return splitGrouped, nil
 }
 
-func parseBenchmarks(r io.Reader) ([]benchmark, error) {
+// ParseBenchmarks extracts a list of Benchmarks from testing.B output
+func ParseBenchmarks(r io.Reader) ([]Benchmark, error) {
 	var (
 		scanner    = bufio.NewScanner(r)
-		benchmarks = map[string]benchmark{}
+		benchmarks = map[string]Benchmark{}
 	)
 	for scanner.Scan() {
 		parsed, err := parse.ParseLine(scanner.Text())
@@ -167,7 +169,7 @@ func parseBenchmarks(r io.Reader) ([]benchmark, error) {
 		}
 		bench, ok := benchmarks[benchName]
 		if !ok {
-			bench = benchmark{name: benchName, results: []benchRes{}}
+			bench = Benchmark{name: benchName, results: []benchRes{}}
 		}
 
 		outputs := benchOutputs{
@@ -186,7 +188,7 @@ func parseBenchmarks(r io.Reader) ([]benchmark, error) {
 		benchmarks[benchName] = bench
 	}
 
-	parsedBenchmarks := make([]benchmark, len(benchmarks))
+	parsedBenchmarks := make([]Benchmark, len(benchmarks))
 	i := 0
 	for _, v := range benchmarks {
 		parsedBenchmarks[i] = v
