@@ -43,9 +43,64 @@ type benchOutputs struct {
 	MBPerS            float64 // MB processed per second
 }
 
+// the output names
+const (
+	RunsName        = "runs"
+	TimeName        = "time"
+	NumAllocsName   = "mem_allocs"
+	AllocBytesName  = "mem_used"
+	AllocMBytesRate = "mem_by_time"
+)
+
+func (b benchOutputs) valByName(name string) (interface{}, error) {
+	switch name {
+	case RunsName:
+		return b.N, nil
+	case TimeName:
+		return b.NsPerOp, nil
+	case NumAllocsName:
+		return b.AllocsPerOp, nil
+	case AllocBytesName:
+		return b.AllocedBytesPerOp, nil
+	case AllocMBytesRate:
+		return b.MBPerS, nil
+	default:
+		return nil, fmt.Errorf("no output found with name: '%s'", name)
+	}
+}
+
+type splitRes struct {
+	x interface{}
+	y interface{}
+}
+
 type benchRes struct {
 	inputs  benchInputs
 	outputs benchOutputs
+}
+
+func (b benchRes) splitTo(xName, yName string) (splitRes, error) {
+	splitRes := splitRes{}
+	xFound := false
+	for _, varValue := range b.inputs.varValues {
+		if varValue.name == xName {
+			xFound = true
+			splitRes.x = varValue.value
+			break
+		}
+	}
+
+	if !xFound {
+		return splitRes, fmt.Errorf("no input found with name: '%s'", xName)
+	}
+
+	yVal, err := b.outputs.valByName(yName)
+	if err != nil {
+		return splitRes, err
+	}
+	splitRes.y = yVal
+
+	return splitRes, nil
 }
 
 type benchmark struct {
@@ -53,7 +108,7 @@ type benchmark struct {
 	results []benchRes
 }
 
-func (b benchmark) groupResults(groupBy []string) map[string][]benchRes {
+func (b benchmark) groupResults(groupBy []string) groupedResults {
 	groupedResults := map[string][]benchRes{}
 	for _, result := range b.results {
 		groupVals := benchVarValues{}
@@ -74,6 +129,24 @@ func (b benchmark) groupResults(groupBy []string) map[string][]benchRes {
 		}
 	}
 	return groupedResults
+}
+
+type groupedResults map[string][]benchRes
+
+func (g groupedResults) splitTo(xName, yName string) (map[string][]splitRes, error) {
+	splitGrouped := map[string][]splitRes{}
+	for groupName, results := range g {
+		splitResults := make([]splitRes, len(results))
+		for i, res := range results {
+			split, err := res.splitTo(xName, yName)
+			if err != nil {
+				return nil, err
+			}
+			splitResults[i] = split
+		}
+		splitGrouped[groupName] = splitResults
+	}
+	return splitGrouped, nil
 }
 
 func parseBenchmarks(r io.Reader) ([]benchmark, error) {
