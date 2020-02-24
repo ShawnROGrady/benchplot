@@ -103,3 +103,205 @@ func TestParseBencharks(t *testing.T) {
 		})
 	}
 }
+
+var groupResultsTests = map[string]struct {
+	benchmark              benchmark
+	groupBy                []string
+	expectedGroupedResults map[string][]benchRes
+}{
+	"group_by_1_string_var": {
+		benchmark: benchmark{
+			name: "BenchmarkMath",
+			results: []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 2000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 100, NsPerOp: 200},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 5, NsPerOp: 1000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 100},
+				},
+			},
+		},
+		groupBy: []string{"y"},
+		expectedGroupedResults: map[string][]benchRes{
+			"y=sin(x)": []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 2000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 100, NsPerOp: 200},
+				},
+			},
+			"y=2x+3": []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 5, NsPerOp: 1000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 100},
+				},
+			},
+		},
+	},
+	"group_by_2_vars": {
+		benchmark: benchmark{
+			name: "BenchmarkMath",
+			results: []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 2000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 100, NsPerOp: 200},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 5, NsPerOp: 1000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "2x+3"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 100},
+				},
+			},
+		},
+		groupBy: []string{"y", "delta"},
+		expectedGroupedResults: map[string][]benchRes{
+			"y=sin(x),delta=0.001": []benchRes{{
+				inputs: benchInputs{
+					subs: []string{"areaUnder"},
+					varValues: []benchVarValue{
+						{name: "y", value: "sin(x)"},
+						{name: "delta", value: 0.001},
+					},
+				},
+				outputs: benchOutputs{N: 10, NsPerOp: 2000},
+			}},
+			"y=sin(x),delta=0.01": []benchRes{{
+				inputs: benchInputs{
+					subs: []string{"areaUnder"},
+					varValues: []benchVarValue{
+						{name: "y", value: "sin(x)"},
+						{name: "delta", value: 0.01},
+					},
+				},
+				outputs: benchOutputs{N: 100, NsPerOp: 200},
+			}},
+			"y=2x+3,delta=0.001": []benchRes{{
+				inputs: benchInputs{
+					subs: []string{"areaUnder"},
+					varValues: []benchVarValue{
+						{name: "y", value: "2x+3"},
+						{name: "delta", value: 0.001},
+					},
+				},
+				outputs: benchOutputs{N: 5, NsPerOp: 1000},
+			}},
+			"y=2x+3,delta=0.01": []benchRes{{
+				inputs: benchInputs{
+					subs: []string{"areaUnder"},
+					varValues: []benchVarValue{
+						{name: "y", value: "2x+3"},
+						{name: "delta", value: 0.01},
+					},
+				},
+				outputs: benchOutputs{N: 10, NsPerOp: 100},
+			}},
+		},
+	},
+}
+
+func TestGroupResults(t *testing.T) {
+	for testName, testCase := range groupResultsTests {
+		t.Run(testName, func(t *testing.T) {
+			grouped := testCase.benchmark.groupResults(testCase.groupBy)
+			if !reflect.DeepEqual(grouped, testCase.expectedGroupedResults) {
+				t.Errorf("unexpected grouped results\nexpected:\n%v\nactual:\n%v", testCase.expectedGroupedResults, grouped)
+			}
+		})
+	}
+}

@@ -20,6 +20,16 @@ func (b benchVarValue) String() string {
 	return fmt.Sprintf("%s=%v", b.name, b.value)
 }
 
+type benchVarValues []benchVarValue
+
+func (b benchVarValues) String() string {
+	s := make([]string, len(b))
+	for i, val := range b {
+		s[i] = val.String()
+	}
+	return strings.Join(s, ",")
+}
+
 type benchInputs struct {
 	varValues []benchVarValue
 	subs      []string
@@ -41,6 +51,29 @@ type benchRes struct {
 type benchmark struct {
 	name    string
 	results []benchRes
+}
+
+func (b benchmark) groupResults(groupBy []string) map[string][]benchRes {
+	groupedResults := map[string][]benchRes{}
+	for _, result := range b.results {
+		groupVals := benchVarValues{}
+		for _, varValue := range result.inputs.varValues {
+			for _, groupName := range groupBy {
+				if varValue.name == groupName {
+					groupVals = append(groupVals, varValue)
+				}
+			}
+		}
+		if len(groupVals) == len(groupBy) {
+			k := groupVals.String()
+			if existingResults, ok := groupedResults[k]; ok {
+				groupedResults[k] = append(existingResults, result)
+			} else {
+				groupedResults[k] = []benchRes{result}
+			}
+		}
+	}
+	return groupedResults
 }
 
 func parseBenchmarks(r io.Reader) ([]benchmark, error) {
