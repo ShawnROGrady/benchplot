@@ -1,6 +1,8 @@
 package plot
 
 import (
+	"sort"
+
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
@@ -24,19 +26,52 @@ func NewGoNumPlotter() (*GoNumPlotter, error) {
 	}, nil
 }
 
-// PlotScatter creates and saves a scatter plot of the specified data
+// PlotScatter creates a scatter plot of the specified data
 func (g *GoNumPlotter) PlotScatter(data map[string]NumericData, title, xLabel, yLabel string) error {
 	g.p.Title.Text = title
 	g.p.X.Label.Text = xLabel
 	g.p.Y.Label.Text = yLabel
+
+	// use sorted keys for consistent iteration order
+	groupNames := make([]string, len(data))
+	j := 0
+	for k := range data {
+		groupNames[j] = k
+		j++
+	}
+	sort.Strings(groupNames)
+
 	vs := make([]interface{}, len(data)*2)
-	i := 0
-	for groupName, groupData := range data {
-		vs[i] = groupName
-		vs[i+1] = numericDataXYs(groupData)
-		i = i + 2
+	for i, groupName := range groupNames {
+		groupData := data[groupName]
+		vs[2*i] = groupName
+		vs[2*i+1] = numericDataXYs(groupData)
 	}
 	return plotutil.AddScatters(g.p, vs...)
+}
+
+// PlotLine creates a line plot of the specified data
+func (g *GoNumPlotter) PlotLine(data map[string]NumericData, title, xLabel, yLabel string) error {
+	g.p.Title.Text = title
+	g.p.X.Label.Text = xLabel
+	g.p.Y.Label.Text = yLabel
+
+	// use sorted keys for consistent iteration order
+	groupNames := make([]string, len(data))
+	j := 0
+	for k := range data {
+		groupNames[j] = k
+		j++
+	}
+	sort.Strings(groupNames)
+
+	vs := make([]interface{}, len(data)*2)
+	for i, groupName := range groupNames {
+		groupData := data[groupName]
+		vs[2*i] = groupName
+		vs[2*i+1] = numericDataXYs(groupData)
+	}
+	return plotutil.AddLines(g.p, vs...)
 }
 
 // Save saves the plot to a file

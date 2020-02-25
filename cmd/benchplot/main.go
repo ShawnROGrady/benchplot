@@ -63,8 +63,12 @@ func main() {
 		log.Fatalf("error constructing plotter: %s", err)
 	}
 
+	// TODO: should allow user to specify plots
 	if err := bench.PlotScatter(p, *groupBy, *xName, *yName); err != nil {
-		log.Fatalf("error plotting: %s", err)
+		log.Fatalf("error plotting scatter: %s", err)
+	}
+	if err := bench.PlotAvgLine(p, *groupBy, *xName, *yName); err != nil {
+		log.Fatalf("error plotting avg line: %s", err)
 	}
 
 	if err := p.Save(*dstWidth, *dstHeight, *dstName); err != nil {

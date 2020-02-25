@@ -9,4 +9,5 @@ type NumericData struct {
 // Plotter defines the functionality needed to plot a benchmark
 type Plotter interface {
 	PlotScatter(data map[string]NumericData, title, xLabel, yLabel string) error
+	PlotLine(data map[string]NumericData, title, xLabel, yLabel string) error
 }
