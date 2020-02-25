@@ -27,7 +27,7 @@ func NewGoNumPlotter() (*GoNumPlotter, error) {
 }
 
 // PlotScatter creates a scatter plot of the specified data
-func (g *GoNumPlotter) PlotScatter(data map[string]NumericData, title, xLabel, yLabel string) error {
+func (g *GoNumPlotter) PlotScatter(data map[string]NumericData, title, xLabel, yLabel string, includeLegend bool) error {
 	g.p.Title.Text = title
 	g.p.X.Label.Text = xLabel
 	g.p.Y.Label.Text = yLabel
@@ -41,17 +41,26 @@ func (g *GoNumPlotter) PlotScatter(data map[string]NumericData, title, xLabel, y
 	}
 	sort.Strings(groupNames)
 
-	vs := make([]interface{}, len(data)*2)
-	for i, groupName := range groupNames {
-		groupData := data[groupName]
-		vs[2*i] = groupName
-		vs[2*i+1] = numericDataXYs(groupData)
+	var vs []interface{}
+	if includeLegend {
+		vs = make([]interface{}, len(data)*2)
+		for i, groupName := range groupNames {
+			groupData := data[groupName]
+			vs[2*i] = groupName
+			vs[2*i+1] = numericDataXYs(groupData)
+		}
+	} else {
+		vs = make([]interface{}, len(data))
+		for i, groupName := range groupNames {
+			groupData := data[groupName]
+			vs[i] = numericDataXYs(groupData)
+		}
 	}
 	return plotutil.AddScatters(g.p, vs...)
 }
 
 // PlotLine creates a line plot of the specified data
-func (g *GoNumPlotter) PlotLine(data map[string]NumericData, title, xLabel, yLabel string) error {
+func (g *GoNumPlotter) PlotLine(data map[string]NumericData, title, xLabel, yLabel string, includeLegend bool) error {
 	g.p.Title.Text = title
 	g.p.X.Label.Text = xLabel
 	g.p.Y.Label.Text = yLabel
@@ -65,11 +74,20 @@ func (g *GoNumPlotter) PlotLine(data map[string]NumericData, title, xLabel, yLab
 	}
 	sort.Strings(groupNames)
 
-	vs := make([]interface{}, len(data)*2)
-	for i, groupName := range groupNames {
-		groupData := data[groupName]
-		vs[2*i] = groupName
-		vs[2*i+1] = numericDataXYs(groupData)
+	var vs []interface{}
+	if includeLegend {
+		vs = make([]interface{}, len(data)*2)
+		for i, groupName := range groupNames {
+			groupData := data[groupName]
+			vs[2*i] = groupName
+			vs[2*i+1] = numericDataXYs(groupData)
+		}
+	} else {
+		vs = make([]interface{}, len(data))
+		for i, groupName := range groupNames {
+			groupData := data[groupName]
+			vs[i] = numericDataXYs(groupData)
+		}
 	}
 	return plotutil.AddLines(g.p, vs...)
 }

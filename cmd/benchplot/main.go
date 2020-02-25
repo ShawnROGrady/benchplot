@@ -19,9 +19,11 @@ func main() {
 		dstWidth  = flag.Float64("w", 500, "the width of the output figure")
 		dstHeight = flag.Float64("h", 500, "the height of the output figure")
 		groupBy   = &stringSliceFlag{}
+		plotTypes = &stringSliceFlag{}
 		resFile   *os.File
 	)
 	flag.Var(groupBy, "group-by", "the variables to group results by (an input to the benchmark)")
+	flag.Var(plotTypes, "plots", fmt.Sprintf("the plots to generate (options = %q). If empty will default to %q for numeric data", []string{benchmark.ScatterType, benchmark.AvgLineType}, []string{benchmark.ScatterType, benchmark.AvgLineType}))
 
 	flag.Parse()
 	if xName == nil || *xName == "" {
@@ -63,12 +65,8 @@ func main() {
 		log.Fatalf("error constructing plotter: %s", err)
 	}
 
-	// TODO: should allow user to specify plots
-	if err := bench.PlotScatter(p, *groupBy, *xName, *yName); err != nil {
-		log.Fatalf("error plotting scatter: %s", err)
-	}
-	if err := bench.PlotAvgLine(p, *groupBy, *xName, *yName); err != nil {
-		log.Fatalf("error plotting avg line: %s", err)
+	if err := bench.Plot(p, *xName, *yName, benchmark.WithGroupBy(*groupBy), benchmark.WithPlotTypes(*plotTypes)); err != nil {
+		log.Fatalf("error plotting: %s", err)
 	}
 
 	if err := p.Save(*dstWidth, *dstHeight, *dstName); err != nil {

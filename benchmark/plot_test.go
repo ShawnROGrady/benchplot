@@ -151,8 +151,11 @@ func TestPlotScatter(t *testing.T) {
 	for testName, testCase := range plotScatterTests {
 		t.Run(testName, func(t *testing.T) {
 			p := &mock.Plotter{
-				PlotScatterFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string) error {
+				PlotScatterFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string, includeLegend bool) error {
 					// validate args
+					if !includeLegend {
+						t.Errorf("unexpectedly not including legend")
+					}
 					if !reflect.DeepEqual(data, testCase.expectedData) {
 						t.Errorf("unexpected plot data\nexpected:\n%v\nactual:\n%v", testCase.expectedData, data)
 					}
@@ -169,7 +172,7 @@ func TestPlotScatter(t *testing.T) {
 				},
 			}
 
-			err := testCase.benchmark.PlotScatter(p, testCase.groupBy, testCase.xName, testCase.yName)
+			err := testCase.benchmark.Plot(p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes([]string{ScatterType}))
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)
@@ -300,8 +303,11 @@ func TestPlotAvgLine(t *testing.T) {
 	for testName, testCase := range plotAvgLineTests {
 		t.Run(testName, func(t *testing.T) {
 			p := &mock.Plotter{
-				PlotLineFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string) error {
+				PlotLineFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string, includeLegend bool) error {
 					// validate args
+					if !includeLegend {
+						t.Errorf("unexpectedly not including legend")
+					}
 					if !reflect.DeepEqual(data, testCase.expectedData) {
 						t.Errorf("unexpected plot data\nexpected:\n%v\nactual:\n%v", testCase.expectedData, data)
 					}
@@ -318,7 +324,167 @@ func TestPlotAvgLine(t *testing.T) {
 				},
 			}
 
-			err := testCase.benchmark.PlotAvgLine(p, testCase.groupBy, testCase.xName, testCase.yName)
+			err := testCase.benchmark.Plot(p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes([]string{AvgLineType}))
+			if err != nil {
+				if !testCase.expectErr {
+					t.Errorf("unexpected error: %s", err)
+				}
+				return
+			}
+			if testCase.expectErr {
+				t.Error("unexpectedly no error")
+			}
+		})
+	}
+}
+
+type plotFnInput struct {
+	data          map[string]plot.NumericData
+	includeLegend bool
+	title         string
+	xLabel        string
+	yLabel        string
+}
+
+var plotTests = map[string]struct {
+	benchmark            Benchmark
+	groupBy              []string
+	plots                []string
+	xName                string
+	yName                string
+	expectedScatterInput plotFnInput
+	expectedLineInput    plotFnInput
+	expectErr            bool
+}{
+	"x=float64,avg_line+scatter": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{"y"},
+		plots:     []string{ScatterType, AvgLineType},
+		xName:     "delta", yName: TimeName,
+		expectedScatterInput: plotFnInput{
+			data: map[string]plot.NumericData{
+				"y=sin(x)": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{2000, 200},
+				},
+				"y=2x+3": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: true,
+		},
+		expectedLineInput: plotFnInput{
+			data: map[string]plot.NumericData{
+				"y=sin(x)": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{2000, 200},
+				},
+				"y=2x+3": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: false,
+		},
+	},
+	"x=float64,default_plots": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{"y"},
+		xName:     "delta", yName: TimeName,
+		expectedScatterInput: plotFnInput{
+			data: map[string]plot.NumericData{
+				"y=sin(x)": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{2000, 200},
+				},
+				"y=2x+3": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: true,
+		},
+		expectedLineInput: plotFnInput{
+			data: map[string]plot.NumericData{
+				"y=sin(x)": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{2000, 200},
+				},
+				"y=2x+3": plot.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: false,
+		},
+	},
+	"invalid_plot_type": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{"y"},
+		xName:     "delta", yName: TimeName,
+		plots:     []string{"invalid"},
+		expectErr: true,
+	},
+}
+
+func TestPlot(t *testing.T) {
+	for testName, testCase := range plotTests {
+		t.Run(testName, func(t *testing.T) {
+			p := &mock.Plotter{
+				PlotScatterFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string, includeLegend bool) error {
+					// validate args
+					if includeLegend != testCase.expectedScatterInput.includeLegend {
+						t.Errorf("unexpected includeLegend\nexpected:%t\nactual:%t", testCase.expectedScatterInput.includeLegend, includeLegend)
+					}
+					if !reflect.DeepEqual(data, testCase.expectedScatterInput.data) {
+						t.Errorf("unexpected plot data\nexpected:\n%v\nactual:\n%v", testCase.expectedScatterInput.data, data)
+					}
+					if title != testCase.expectedScatterInput.title {
+						t.Errorf("unexpected title\nexpected:\n%s\nactual:\n%s", testCase.expectedScatterInput.title, title)
+					}
+					if xLabel != testCase.expectedScatterInput.xLabel {
+						t.Errorf("unexpected xLabel\nexpected:\n%s\nactual:\n%s", testCase.expectedScatterInput.xLabel, xLabel)
+					}
+					if yLabel != testCase.expectedScatterInput.yLabel {
+						t.Errorf("unexpected yLabel\nexpected:\n%s\nactual:\n%s", testCase.expectedScatterInput.yLabel, yLabel)
+					}
+					return nil
+				},
+				PlotLineFn: func(data map[string]plot.NumericData, title string, xLabel string, yLabel string, includeLegend bool) error {
+					// validate args
+					if includeLegend != testCase.expectedLineInput.includeLegend {
+						t.Errorf("unexpected includeLegend\nexpected:%t\nactual:%t", testCase.expectedLineInput.includeLegend, includeLegend)
+					}
+					if !reflect.DeepEqual(data, testCase.expectedLineInput.data) {
+						t.Errorf("unexpected plot data\nexpected:\n%v\nactual:\n%v", testCase.expectedLineInput.data, data)
+					}
+					if title != testCase.expectedLineInput.title {
+						t.Errorf("unexpected title\nexpected:\n%s\nactual:\n%s", testCase.expectedLineInput.title, title)
+					}
+					if xLabel != testCase.expectedLineInput.xLabel {
+						t.Errorf("unexpected xLabel\nexpected:\n%s\nactual:\n%s", testCase.expectedLineInput.xLabel, xLabel)
+					}
+					if yLabel != testCase.expectedLineInput.yLabel {
+						t.Errorf("unexpected yLabel\nexpected:\n%s\nactual:\n%s", testCase.expectedLineInput.yLabel, yLabel)
+					}
+					return nil
+				},
+			}
+
+			err := testCase.benchmark.Plot(p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes(testCase.plots))
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)

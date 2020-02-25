@@ -1,6 +1,7 @@
 package benchmark
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -8,46 +9,100 @@ import (
 	"github.com/ShawnROGrady/benchplot/plot"
 )
 
-// PlotScatter plots the benchmark results as a scatter plot
-func (b Benchmark) PlotScatter(p plot.Plotter, groupBy []string, xName, yName string) error {
-	var (
-		title  = b.Name
-		xLabel = xName
-		yLabel = yName // TODO: include units
-	)
+// the available plot types
+const (
+	ScatterType = "scatter"
+	AvgLineType = "avg_line"
+)
 
-	grouped := b.groupResults(groupBy)
+type plotOptions struct {
+	groupBy   []string
+	plotTypes []string
+}
+
+// Plot plots the benchmark
+func (b Benchmark) Plot(p plot.Plotter, xName, yName string, options ...plotOption) error {
+	pltOptions := &plotOptions{
+		groupBy:   []string{},
+		plotTypes: []string{},
+	}
+	for _, opt := range options {
+		opt.apply(pltOptions)
+	}
+
+	grouped := b.groupResults(pltOptions.groupBy)
 	splitGrouped, err := grouped.splitTo(xName, yName)
 	if err != nil {
 		return fmt.Errorf("err splitting grouped results: %w", err)
 	}
+
+	if len(pltOptions.plotTypes) == 0 {
+		plotTypes, err := defaultPlotTypes(splitGrouped)
+		if err != nil {
+			return err
+		}
+		pltOptions.plotTypes = plotTypes
+	}
+
+	for i, plotType := range pltOptions.plotTypes {
+		includeLegend := i == 0
+		switch plotType {
+		case ScatterType:
+			if err := plotScatter(p, b.Name, xName, yName, splitGrouped, includeLegend); err != nil {
+				return fmt.Errorf("error creating scatter plot: %w", err)
+			}
+		case AvgLineType:
+			if err := plotAvgLine(p, b.Name, xName, yName, splitGrouped, includeLegend); err != nil {
+				return fmt.Errorf("error creating average line plot: %w", err)
+			}
+		default:
+			return fmt.Errorf("unknown plot type: %s", plotType)
+		}
+	}
+	return nil
+}
+
+func defaultPlotTypes(splitGrouped map[string][]splitRes) ([]string, error) {
+	// just use the first x value
+	for _, res := range splitGrouped {
+		if len(res) == 0 {
+			continue
+		}
+		xKind := reflect.TypeOf(res[0].x).Kind()
+		switch xKind {
+		case reflect.Int, reflect.Float64, reflect.Uint64:
+			return []string{ScatterType, AvgLineType}, nil
+		}
+	}
+	return []string{}, errors.New("could not determine default plot type")
+}
+
+// plotScatter plots the benchmark results as a scatter plot
+func plotScatter(p plot.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
+	var (
+		xLabel = xName
+		yLabel = yName // TODO: include units
+	)
 
 	data, err := splitGroupedPlotData(splitGrouped)
 	if err != nil {
 		return err
 	}
-	return p.PlotScatter(data, title, xLabel, yLabel)
+	return p.PlotScatter(data, title, xLabel, yLabel, includeLegend)
 }
 
-// PlotAvgLine plots the benchmark results as a line where y(x) = avg(f(x))
-func (b Benchmark) PlotAvgLine(p plot.Plotter, groupBy []string, xName, yName string) error {
+// plotAvgLine plots the benchmark results as a line where y(x) = avg(f(x))
+func plotAvgLine(p plot.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
 	var (
-		title  = b.Name
 		xLabel = xName
 		yLabel = yName // TODO: include units
 	)
-
-	grouped := b.groupResults(groupBy)
-	splitGrouped, err := grouped.splitTo(xName, yName)
-	if err != nil {
-		return fmt.Errorf("err splitting grouped results: %w", err)
-	}
 
 	data, err := splitGroupedAvgPlotData(splitGrouped)
 	if err != nil {
 		return err
 	}
-	return p.PlotLine(data, title, xLabel, yLabel)
+	return p.PlotLine(data, title, xLabel, yLabel, includeLegend)
 }
 
 func splitGroupedPlotData(splitGrouped map[string][]splitRes) (map[string]plot.NumericData, error) {
