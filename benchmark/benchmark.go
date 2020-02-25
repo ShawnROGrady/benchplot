@@ -19,6 +19,12 @@ type Benchmark struct {
 
 func (b Benchmark) groupResults(groupBy []string) groupedResults {
 	groupedResults := map[string][]benchRes{}
+	if len(groupBy) == 0 {
+		res := make([]benchRes, len(b.results))
+		copy(res, b.results)
+		groupedResults[""] = res
+		return groupedResults
+	}
 	for _, result := range b.results {
 		groupVals := benchVarValues{}
 		for _, varValue := range result.inputs.varValues {

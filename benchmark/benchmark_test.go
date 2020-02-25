@@ -208,6 +208,58 @@ var groupResultsTests = map[string]struct {
 			},
 		},
 	},
+	"no_group_by": {
+		benchmark: Benchmark{
+			Name: "BenchmarkMath",
+			results: []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 2000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 100, NsPerOp: 200},
+				},
+			},
+		},
+		groupBy: []string{},
+		expectedGroupedResults: map[string][]benchRes{
+			"": []benchRes{
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.001},
+						},
+					},
+					outputs: benchOutputs{N: 10, NsPerOp: 2000},
+				},
+				{
+					inputs: benchInputs{
+						subs: []string{"areaUnder"},
+						varValues: []benchVarValue{
+							{name: "y", value: "sin(x)"},
+							{name: "delta", value: 0.01},
+						},
+					},
+					outputs: benchOutputs{N: 100, NsPerOp: 200},
+				},
+			},
+		},
+	},
 	"group_by_2_vars": {
 		benchmark: Benchmark{
 			Name: "BenchmarkMath",
