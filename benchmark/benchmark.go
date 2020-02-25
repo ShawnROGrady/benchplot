@@ -4,106 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/ShawnROGrady/benchplot/plot"
 	"golang.org/x/tools/benchmark/parse"
 )
-
-type benchVarValue struct {
-	name  string
-	value interface{}
-}
-
-func (b benchVarValue) String() string {
-	return fmt.Sprintf("%s=%v", b.name, b.value)
-}
-
-type benchVarValues []benchVarValue
-
-func (b benchVarValues) String() string {
-	s := make([]string, len(b))
-	for i, val := range b {
-		s[i] = val.String()
-	}
-	return strings.Join(s, ",")
-}
-
-type benchInputs struct {
-	varValues []benchVarValue
-	subs      []string
-}
-
-type benchOutputs struct {
-	N                 int     // number of iterations
-	NsPerOp           float64 // nanoseconds per iteration
-	AllocedBytesPerOp uint64  // bytes allocated per iteration
-	AllocsPerOp       uint64  // allocs per iteration
-	MBPerS            float64 // MB processed per second
-}
-
-// the output names
-const (
-	RunsName        = "runs"
-	TimeName        = "time"
-	NumAllocsName   = "mem_allocs"
-	AllocBytesName  = "mem_used"
-	AllocMBytesRate = "mem_by_time"
-)
-
-func (b benchOutputs) valByName(name string) (interface{}, error) {
-	switch name {
-	case RunsName:
-		return b.N, nil
-	case TimeName:
-		return b.NsPerOp, nil
-	case NumAllocsName:
-		return b.AllocsPerOp, nil
-	case AllocBytesName:
-		return b.AllocedBytesPerOp, nil
-	case AllocMBytesRate:
-		return b.MBPerS, nil
-	default:
-		return nil, fmt.Errorf("no output found with name: '%s'", name)
-	}
-}
-
-type splitRes struct {
-	x interface{}
-	y interface{}
-}
-
-type benchRes struct {
-	inputs  benchInputs
-	outputs benchOutputs
-}
-
-func (b benchRes) splitTo(xName, yName string) (splitRes, error) {
-	splitRes := splitRes{}
-	xFound := false
-	for _, varValue := range b.inputs.varValues {
-		if varValue.name == xName {
-			xFound = true
-			splitRes.x = varValue.value
-			break
-		}
-	}
-
-	if !xFound {
-		return splitRes, fmt.Errorf("no input found with name: '%s'", xName)
-	}
-
-	yVal, err := b.outputs.valByName(yName)
-	if err != nil {
-		return splitRes, err
-	}
-	splitRes.y = yVal
-
-	return splitRes, nil
-}
 
 // Benchmark represents a single benchmark and it's results
 type Benchmark struct {
@@ -132,80 +38,6 @@ func (b Benchmark) groupResults(groupBy []string) groupedResults {
 		}
 	}
 	return groupedResults
-}
-
-// PlotScatter plots the benchmark results as a scatter plot
-func (b Benchmark) PlotScatter(p plot.Plotter, groupBy []string, xName, yName string) error {
-	var (
-		title  = b.Name
-		xLabel = xName
-		yLabel = yName // TODO: include units
-	)
-
-	grouped := b.groupResults(groupBy)
-	splitGrouped, err := grouped.splitTo(xName, yName)
-	if err != nil {
-		return fmt.Errorf("err splitting grouped results: %w", err)
-	}
-
-	data := map[string]plot.NumericData{}
-	for groupName, splitResults := range splitGrouped {
-		var (
-			xData = []float64{}
-			yData = []float64{}
-		)
-
-		for _, res := range splitResults {
-			var (
-				xVal = reflect.ValueOf(res.x)
-				yVal = reflect.ValueOf(res.y)
-			)
-
-			switch xVal.Type().Kind() {
-			case reflect.Int:
-				xData = append(xData, float64(xVal.Int()))
-			case reflect.Float64:
-				xData = append(xData, xVal.Float())
-			default:
-				return fmt.Errorf("cannot create scatter plot from x data of kind: '%s'", xVal.Type().Kind())
-			}
-
-			switch yVal.Type().Kind() {
-			case reflect.Int:
-				yData = append(yData, float64(yVal.Int()))
-			case reflect.Float64:
-				yData = append(yData, yVal.Float())
-			case reflect.Uint64:
-				yData = append(yData, float64(yVal.Uint()))
-			default:
-				return fmt.Errorf("cannot create scatter plot from y data of kind: '%s'", yVal.Type().Kind())
-			}
-		}
-		data[groupName] = plot.NumericData{
-			X: xData,
-			Y: yData,
-		}
-	}
-
-	return p.PlotScatter(data, title, xLabel, yLabel)
-}
-
-type groupedResults map[string][]benchRes
-
-func (g groupedResults) splitTo(xName, yName string) (map[string][]splitRes, error) {
-	splitGrouped := map[string][]splitRes{}
-	for groupName, results := range g {
-		splitResults := make([]splitRes, len(results))
-		for i, res := range results {
-			split, err := res.splitTo(xName, yName)
-			if err != nil {
-				return nil, err
-			}
-			splitResults[i] = split
-		}
-		splitGrouped[groupName] = splitResults
-	}
-	return splitGrouped, nil
 }
 
 // ParseBenchmarks extracts a list of Benchmarks from testing.B output
