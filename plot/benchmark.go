@@ -1,4 +1,4 @@
-package benchmark
+package plot
 
 import (
 	"errors"
@@ -6,10 +6,11 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/ShawnROGrady/benchplot/plot"
+	"github.com/ShawnROGrady/benchparse"
+	"github.com/ShawnROGrady/benchplot/plot/plotter"
 )
 
-// the available plot types
+// The available plot types.
 const (
 	ScatterType = "scatter"
 	AvgLineType = "avg_line"
@@ -20,8 +21,8 @@ type plotOptions struct {
 	plotTypes []string
 }
 
-// Plot plots the benchmark
-func (b Benchmark) Plot(p plot.Plotter, xName, yName string, options ...plotOption) error {
+// Benchmark plots the benchmark.
+func Benchmark(b benchparse.Benchmark, p plotter.Plotter, xName, yName string, options ...plotOption) error {
 	pltOptions := &plotOptions{
 		groupBy:   []string{},
 		plotTypes: []string{},
@@ -30,8 +31,8 @@ func (b Benchmark) Plot(p plot.Plotter, xName, yName string, options ...plotOpti
 		opt.apply(pltOptions)
 	}
 
-	grouped := b.groupResults(pltOptions.groupBy)
-	splitGrouped, err := grouped.splitTo(xName, yName)
+	grouped := b.GroupResults(pltOptions.groupBy)
+	splitGrouped, err := splitGroupedResult(grouped, xName, yName)
 	if err != nil {
 		return fmt.Errorf("err splitting grouped results: %w", err)
 	}
@@ -77,8 +78,8 @@ func defaultPlotTypes(splitGrouped map[string][]splitRes) ([]string, error) {
 	return []string{}, errors.New("could not determine default plot type")
 }
 
-// plotScatter plots the benchmark results as a scatter plot
-func plotScatter(p plot.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
+// plotScatter plots the benchmark results as a scatter plot.
+func plotScatter(p plotter.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
 	var (
 		xLabel = xName
 		yLabel = yName // TODO: include units
@@ -91,8 +92,8 @@ func plotScatter(p plot.Plotter, title, xName, yName string, splitGrouped map[st
 	return p.PlotScatter(data, title, xLabel, yLabel, includeLegend)
 }
 
-// plotAvgLine plots the benchmark results as a line where y(x) = avg(f(x))
-func plotAvgLine(p plot.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
+// plotAvgLine plots the benchmark results as a line where y(x) = avg(f(x)).
+func plotAvgLine(p plotter.Plotter, title, xName, yName string, splitGrouped map[string][]splitRes, includeLegend bool) error {
 	var (
 		xLabel = xName
 		yLabel = yName // TODO: include units
@@ -105,8 +106,8 @@ func plotAvgLine(p plot.Plotter, title, xName, yName string, splitGrouped map[st
 	return p.PlotLine(data, title, xLabel, yLabel, includeLegend)
 }
 
-func splitGroupedPlotData(splitGrouped map[string][]splitRes) (map[string]plot.NumericData, error) {
-	data := map[string]plot.NumericData{}
+func splitGroupedPlotData(splitGrouped map[string][]splitRes) (map[string]plotter.NumericData, error) {
+	data := map[string]plotter.NumericData{}
 	for groupName, splitResults := range splitGrouped {
 		var (
 			xData = []float64{}
@@ -126,7 +127,7 @@ func splitGroupedPlotData(splitGrouped map[string][]splitRes) (map[string]plot.N
 			}
 			yData = append(yData, yF)
 		}
-		data[groupName] = plot.NumericData{
+		data[groupName] = plotter.NumericData{
 			X: xData,
 			Y: yData,
 		}
@@ -134,8 +135,8 @@ func splitGroupedPlotData(splitGrouped map[string][]splitRes) (map[string]plot.N
 	return data, nil
 }
 
-func splitGroupedAvgPlotData(splitGrouped map[string][]splitRes) (map[string]plot.NumericData, error) {
-	data := map[string]plot.NumericData{}
+func splitGroupedAvgPlotData(splitGrouped map[string][]splitRes) (map[string]plotter.NumericData, error) {
+	data := map[string]plotter.NumericData{}
 	for groupName, splitResults := range splitGrouped {
 		// track y values corresponding to each x
 		vals := map[float64][]float64{}
@@ -180,7 +181,7 @@ func splitGroupedAvgPlotData(splitGrouped map[string][]splitRes) (map[string]plo
 			yData[i] = totY / float64(len(yVals))
 		}
 
-		data[groupName] = plot.NumericData{
+		data[groupName] = plotter.NumericData{
 			X: xData,
 			Y: yData,
 		}
