@@ -27,7 +27,7 @@ Full flag set:
 ```
 
 ## Examples
-Plotting the results of `BenchmarkGroupResults` (in `benchmark/benchmark_test.go`):
+Plotting the results of `BenchmarkGroupResults` (in `benchmark_test.go` of [benchparse](https://github.com/ShawnROGrady/benchparse) repo):
 ```
 go test ./benchmark -run ! -bench BenchmarkGroupResults -count 3 -race | benchplot -bench BenchmarkGroupResults -group-by group_by_count -x num_results
 ```
