@@ -12,6 +12,7 @@ import (
 var plotScatterTests = map[string]struct {
 	benchmark      benchparse.Benchmark
 	groupBy        []string
+	filterBy       []string
 	xName          string
 	yName          string
 	expectedData   map[string]plotter.NumericData
@@ -74,6 +75,21 @@ var plotScatterTests = map[string]struct {
 		expectedXLabel: "delta",
 		expectedYLabel: NumAllocsName,
 	},
+	"x=float64,y=float64,valid_filter": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{},
+		filterBy:  []string{"y==sin(x)"},
+		xName:     "delta", yName: TimeName,
+		expectedData: map[string]plotter.NumericData{
+			"": plotter.NumericData{
+				X: []float64{0.001, 0.01},
+				Y: []float64{2000, 200},
+			},
+		},
+		expectedTitle:  "BenchmarkMath",
+		expectedXLabel: "delta",
+		expectedYLabel: TimeName,
+	},
 	"x=string,y=float64": {
 		benchmark: sampleBenchmark,
 		groupBy:   []string{"start_x"},
@@ -119,7 +135,13 @@ func TestPlotScatter(t *testing.T) {
 				},
 			}
 
-			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes([]string{ScatterType}))
+			opts := []plotOption{
+				WithGroupBy(testCase.groupBy),
+				WithPlotTypes([]string{ScatterType}),
+				WithFilterBy(testCase.filterBy),
+			}
+
+			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, opts...)
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)
@@ -136,6 +158,7 @@ func TestPlotScatter(t *testing.T) {
 var plotAvgLineTests = map[string]struct {
 	benchmark      benchparse.Benchmark
 	groupBy        []string
+	filterBy       []string
 	xName          string
 	yName          string
 	expectedData   map[string]plotter.NumericData
@@ -156,6 +179,21 @@ var plotAvgLineTests = map[string]struct {
 			"y=2x+3": plotter.NumericData{
 				X: []float64{0.001, 0.01},
 				Y: []float64{1000, 100},
+			},
+		},
+		expectedTitle:  "BenchmarkMath",
+		expectedXLabel: "delta",
+		expectedYLabel: TimeName,
+	},
+	"x=float64,y=float64,valid_filter": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{},
+		filterBy:  []string{"y==sin(x)"},
+		xName:     "delta", yName: TimeName,
+		expectedData: map[string]plotter.NumericData{
+			"": plotter.NumericData{
+				X: []float64{0.001, 0.01},
+				Y: []float64{2000, 200},
 			},
 		},
 		expectedTitle:  "BenchmarkMath",
@@ -271,7 +309,13 @@ func TestPlotAvgLine(t *testing.T) {
 				},
 			}
 
-			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes([]string{AvgLineType}))
+			opts := []plotOption{
+				WithGroupBy(testCase.groupBy),
+				WithPlotTypes([]string{AvgLineType}),
+				WithFilterBy(testCase.filterBy),
+			}
+
+			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, opts...)
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)
@@ -296,6 +340,7 @@ type plotFnInput struct {
 var plotTests = map[string]struct {
 	benchmark            benchparse.Benchmark
 	groupBy              []string
+	filterBy             []string
 	plots                []string
 	xName                string
 	yName                string
@@ -378,6 +423,43 @@ var plotTests = map[string]struct {
 			includeLegend: false,
 		},
 	},
+	"x=float64,default_plots,valid_filter": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{},
+		filterBy:  []string{"y==2x+3"},
+		xName:     "delta", yName: TimeName,
+		expectedScatterInput: plotFnInput{
+			data: map[string]plotter.NumericData{
+				"": plotter.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: true,
+		},
+		expectedLineInput: plotFnInput{
+			data: map[string]plotter.NumericData{
+				"": plotter.NumericData{
+					X: []float64{0.001, 0.01},
+					Y: []float64{1000, 100},
+				},
+			},
+			title:         "BenchmarkMath",
+			xLabel:        "delta",
+			yLabel:        TimeName,
+			includeLegend: false,
+		},
+	},
+	"x=float64,default_plots,invalid_filter": {
+		benchmark: sampleBenchmark,
+		groupBy:   []string{},
+		filterBy:  []string{"y!=2"},
+		xName:     "delta", yName: TimeName,
+		expectErr: true,
+	},
 	"invalid_plot_type": {
 		benchmark: sampleBenchmark,
 		groupBy:   []string{"y"},
@@ -431,7 +513,13 @@ func TestPlot(t *testing.T) {
 				},
 			}
 
-			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, WithGroupBy(testCase.groupBy), WithPlotTypes(testCase.plots))
+			opts := []plotOption{
+				WithGroupBy(testCase.groupBy),
+				WithPlotTypes(testCase.plots),
+				WithFilterBy(testCase.filterBy),
+			}
+
+			err := Benchmark(testCase.benchmark, p, testCase.xName, testCase.yName, opts...)
 			if err != nil {
 				if !testCase.expectErr {
 					t.Errorf("unexpected error: %s", err)

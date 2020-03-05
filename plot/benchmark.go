@@ -17,21 +17,35 @@ const (
 )
 
 type plotOptions struct {
-	groupBy   []string
-	plotTypes []string
+	groupBy     []string
+	plotTypes   []string
+	filterExprs []string
 }
 
 // Benchmark plots the benchmark.
 func Benchmark(b benchparse.Benchmark, p plotter.Plotter, xName, yName string, options ...plotOption) error {
 	pltOptions := &plotOptions{
-		groupBy:   []string{},
-		plotTypes: []string{},
+		groupBy:     []string{},
+		plotTypes:   []string{},
+		filterExprs: []string{},
 	}
 	for _, opt := range options {
 		opt.apply(pltOptions)
 	}
 
-	grouped := b.GroupResults(pltOptions.groupBy)
+	var (
+		res = b.Results
+		err error
+	)
+
+	for _, expr := range pltOptions.filterExprs {
+		res, err = res.Filter(expr)
+		if err != nil {
+			return err
+		}
+	}
+
+	grouped := res.Group(pltOptions.groupBy)
 	splitGrouped, err := splitGroupedResult(grouped, xName, yName)
 	if err != nil {
 		return fmt.Errorf("err splitting grouped results: %w", err)

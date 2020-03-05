@@ -13,18 +13,26 @@ import (
 
 func main() {
 	var (
-		benchName = flag.String("bench", "", "the name of the benchmark to plot")
-		xName     = flag.String("x", "", "the name of the x-axis variable (an input to the benchmark)")
-		yName     = flag.String("y", plot.TimeName, "the name of the y-axis variable")
-		dstName   = flag.String("o", "", "the output file name with extension (if empty will be set to ${bench}.png)")
-		dstWidth  = flag.Float64("w", 500, "the width of the output figure")
-		dstHeight = flag.Float64("h", 500, "the height of the output figure")
+		benchName = flag.String("bench", "", "The name of the benchmark to plot")
+		xName     = flag.String("x", "", "The name of the x-axis variable (an input to the benchmark)")
+		yName     = flag.String("y", plot.TimeName, "The name of the y-axis variable")
+		dstName   = flag.String("o", "", "The output file name with extension (if empty will be set to ${bench}.png)")
+		dstWidth  = flag.Float64("w", 500, "The width of the output figure")
+		dstHeight = flag.Float64("h", 500, "The height of the output figure")
 		groupBy   = &stringSliceFlag{}
 		plotTypes = &stringSliceFlag{}
+		filterBy  = &stringSliceFlag{}
 		resFile   *os.File
 	)
-	flag.Var(groupBy, "group-by", "the variables to group results by (an input to the benchmark)")
-	flag.Var(plotTypes, "plots", fmt.Sprintf("the plots to generate (options = %q). If empty will default to %q for numeric data", []string{plot.ScatterType, plot.AvgLineType}, []string{plot.ScatterType, plot.AvgLineType}))
+	flag.Var(groupBy, "group-by", "The variables to group results by (an input to the benchmark)")
+	flag.Var(plotTypes, "plots", fmt.Sprintf("The plots to generate (options = %q). If empty will default to %q for numeric data", []string{plot.ScatterType, plot.AvgLineType}, []string{plot.ScatterType, plot.AvgLineType}))
+	flag.Var(
+		filterBy, "filter-by",
+		fmt.Sprintf(
+			"Expressions to filter results by. Form: 'var_name==var_value'. Available comparison operations: %q",
+			[]benchparse.Comparison{benchparse.Eq, benchparse.Ne, benchparse.Lt, benchparse.Gt, benchparse.Le, benchparse.Ge},
+		),
+	)
 
 	flag.Parse()
 	if xName == nil || *xName == "" {
@@ -66,7 +74,7 @@ func main() {
 		log.Fatalf("error constructing plotter: %s", err)
 	}
 
-	if err := plot.Benchmark(bench, p, *xName, *yName, plot.WithGroupBy(*groupBy), plot.WithPlotTypes(*plotTypes)); err != nil {
+	if err := plot.Benchmark(bench, p, *xName, *yName, plot.WithGroupBy(*groupBy), plot.WithFilterBy(*filterBy), plot.WithPlotTypes(*plotTypes)); err != nil {
 		log.Fatalf("error plotting: %s", err)
 	}
 
