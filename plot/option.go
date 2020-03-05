@@ -17,3 +17,11 @@ type WithGroupBy []string
 func (w WithGroupBy) apply(p *plotOptions) {
 	p.groupBy = []string(w)
 }
+
+// WithFilterBy is an option to specify any expressions to filter
+// the data to be plotted.
+type WithFilterBy []string
+
+func (w WithFilterBy) apply(p *plotOptions) {
+	p.filterExprs = []string(w)
+}
