@@ -8,22 +8,25 @@ Where `${FILE}` is the path to a file containing the output of a go benchmark (i
 
 Full flag set:
 ```
- -bench string
-        the name of the benchmark to plot
+  -bench string
+    	The name of the benchmark to plot
+  -filter-by value
+    	Expressions to filter results by. Form: 'var_name==var_value'. Available comparison operations: ["==" "!=" "<" ">" "<=" ">="]
   -group-by value
-        the variables to group results by (an input to the benchmark)
-  -h float
-        the height of the output figure (default 500)
+    	The variables to group results by (an input to the benchmark)
+  -h	Show this help message and exit
+  -height float
+    	The height of the output figure (default 500)
   -o string
-        the output file name with extension (if empty will be set to ${bench}.png)
+    	The output file name with extension (if empty will be set to ${bench}.png)
   -plots value
-        the plots to generate (options = ["scatter" "avg_line"]). If empty will default to ["scatter" "avg_line"] for numeric data
-  -w float
-        the width of the output figure (default 500)
+    	The plots to generate (options = ["scatter" "avg_line"]). If empty will default to ["scatter" "avg_line"] for numeric data
+  -width float
+    	The width of the output figure (default 500)
   -x string
-        the name of the x-axis variable (an input to the benchmark)
+    	The name of the x-axis variable (an input to the benchmark)
   -y string
-        the name of the y-axis variable (default "time")
+    	The name of the y-axis variable (default "time")
 ```
 
 ## Examples
