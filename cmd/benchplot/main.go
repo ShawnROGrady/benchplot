@@ -17,8 +17,9 @@ func main() {
 		xName     = flag.String("x", "", "The name of the x-axis variable (an input to the benchmark)")
 		yName     = flag.String("y", plot.TimeName, "The name of the y-axis variable")
 		dstName   = flag.String("o", "", "The output file name with extension (if empty will be set to ${bench}.png)")
-		dstWidth  = flag.Float64("w", 500, "The width of the output figure")
-		dstHeight = flag.Float64("h", 500, "The height of the output figure")
+		dstWidth  = flag.Float64("width", 500, "The width of the output figure")
+		dstHeight = flag.Float64("height", 500, "The height of the output figure")
+		help      = flag.Bool("h", false, "Show this help message and exit")
 		groupBy   = &stringSliceFlag{}
 		plotTypes = &stringSliceFlag{}
 		filterBy  = &stringSliceFlag{}
@@ -35,6 +36,11 @@ func main() {
 	)
 
 	flag.Parse()
+	if help != nil && *help {
+		flag.CommandLine.SetOutput(os.Stdout)
+		flag.CommandLine.Usage()
+		return
+	}
 	if xName == nil || *xName == "" {
 		log.Fatal("x-axis variable is required")
 	}

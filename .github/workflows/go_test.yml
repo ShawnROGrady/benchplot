@@ -1,4 +1,4 @@
-name: GoTest
+name: Test
 on: [push, pull_request]
 jobs:
   test:
@@ -16,4 +16,4 @@ jobs:
       uses: actions/checkout@v1
       
     - name: Test
-      run: go test -race -cover ./...
+      run: ./scripts/test.sh
