@@ -75,11 +75,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	p, err := gonum.NewPlotter()
-	if err != nil {
-		log.Fatalf("error constructing plotter: %s", err)
-	}
-
+	p := &gonum.Plotter{}
 	if err := plot.Benchmark(bench, p, *xName, *yName, plot.WithGroupBy(*groupBy), plot.WithFilterBy(*filterBy), plot.WithPlotTypes(*plotTypes)); err != nil {
 		log.Fatalf("error plotting: %s", err)
 	}

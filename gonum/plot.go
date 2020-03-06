@@ -3,6 +3,7 @@
 package gonum
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/ShawnROGrady/benchplot/plot/plotter"
@@ -17,20 +18,27 @@ type Plotter struct {
 	p *gonumplot.Plot
 }
 
-// NewPlotter constructs a new plotter.
-func NewPlotter() (*Plotter, error) {
-	p, err := gonumplot.New()
-	if err != nil {
-		return nil, err
+func (g *Plotter) init() error {
+	// NOTE: might be worth switching to sync.Once if it's safe to plot multiple things concurrently
+	if g.p != nil {
+		return nil
 	}
 
-	return &Plotter{
-		p: p,
-	}, nil
+	var err error
+	g.p, err = gonumplot.New()
+
+	if err != nil {
+		return fmt.Errorf("error initializing plotter: %w", err)
+	}
+
+	return nil
 }
 
 // PlotScatter creates a scatter plot of the specified data.
 func (g *Plotter) PlotScatter(data map[string]plotter.NumericData, title, xLabel, yLabel string, includeLegend bool) error {
+	if err := g.init(); err != nil {
+		return err
+	}
 	g.p.Title.Text = title
 	g.p.X.Label.Text = xLabel
 	g.p.Y.Label.Text = yLabel
@@ -64,6 +72,9 @@ func (g *Plotter) PlotScatter(data map[string]plotter.NumericData, title, xLabel
 
 // PlotLine creates a line plot of the specified data.
 func (g *Plotter) PlotLine(data map[string]plotter.NumericData, title, xLabel, yLabel string, includeLegend bool) error {
+	if err := g.init(); err != nil {
+		return err
+	}
 	g.p.Title.Text = title
 	g.p.X.Label.Text = xLabel
 	g.p.Y.Label.Text = yLabel
@@ -97,6 +108,9 @@ func (g *Plotter) PlotLine(data map[string]plotter.NumericData, title, xLabel, y
 
 // Save saves the plot to a file
 func (g *Plotter) Save(dstWidth, dstHeight float64, dstName string) error {
+	if err := g.init(); err != nil {
+		return err
+	}
 	return g.p.Save(vg.Length(dstWidth), vg.Length(dstHeight), dstName)
 }
 
