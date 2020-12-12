@@ -13,17 +13,19 @@ import (
 
 func main() {
 	var (
-		benchName = flag.String("bench", "", "The name of the benchmark to plot")
-		xName     = flag.String("x", "", "The name of the x-axis variable (an input to the benchmark)")
-		yName     = flag.String("y", plot.TimeName, "The name of the y-axis variable")
-		dstName   = flag.String("o", "", "The output file name with extension (if empty will be set to ${bench}.png)")
-		dstWidth  = flag.Float64("width", 500, "The width of the output figure")
-		dstHeight = flag.Float64("height", 500, "The height of the output figure")
-		help      = flag.Bool("h", false, "Show this help message and exit")
-		groupBy   = &stringSliceFlag{}
-		plotTypes = &stringSliceFlag{}
-		filterBy  = &stringSliceFlag{}
-		resFile   *os.File
+		benchName  = flag.String("bench", "", "The name of the benchmark to plot")
+		xName      = flag.String("x", "", "The name of the x-axis variable (an input to the benchmark)")
+		yName      = flag.String("y", plot.TimeName, "The name of the y-axis variable")
+		dstName    = flag.String("o", "", "The output file name with extension (if empty will be set to ${bench}.png)")
+		dstWidth   = flag.Float64("width", 500, "The width of the output figure")
+		dstHeight  = flag.Float64("height", 500, "The height of the output figure")
+		help       = flag.Bool("h", false, "Show this help message and exit")
+		topLegend  = flag.Bool("top-legend", false, "Display legend on top edge of plot (default is on bottom edge)")
+		leftLegend = flag.Bool("left-legend", false, "Display legend on left edge of plot (default is on right edge)")
+		groupBy    = &stringSliceFlag{}
+		plotTypes  = &stringSliceFlag{}
+		filterBy   = &stringSliceFlag{}
+		resFile    *os.File
 	)
 	flag.Var(groupBy, "group-by", "The variables to group results by (an input to the benchmark)")
 	flag.Var(plotTypes, "plots", fmt.Sprintf("The plots to generate (options = %q). If empty will default to %q for numeric data", []string{plot.ScatterType, plot.AvgLineType}, []string{plot.ScatterType, plot.AvgLineType}))
@@ -75,7 +77,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	p := &gonum.Plotter{}
+	p := &gonum.Plotter{
+		TopLegend:  *topLegend,
+		LeftLegend: *leftLegend,
+	}
 	if err := plot.Benchmark(bench, p, *xName, *yName, plot.WithGroupBy(*groupBy), plot.WithFilterBy(*filterBy), plot.WithPlotTypes(*plotTypes)); err != nil {
 		log.Fatalf("error plotting: %s", err)
 	}
