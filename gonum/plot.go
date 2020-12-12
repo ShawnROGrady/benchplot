@@ -15,7 +15,9 @@ import (
 
 // Plotter wraps a gonum/plot.Plot to implement Plotter.
 type Plotter struct {
-	p *gonumplot.Plot
+	TopLegend  bool
+	LeftLegend bool
+	p          *gonumplot.Plot
 }
 
 func (g *Plotter) init() error {
@@ -30,6 +32,9 @@ func (g *Plotter) init() error {
 	if err != nil {
 		return fmt.Errorf("error initializing plotter: %w", err)
 	}
+
+	g.p.Legend.Top = g.TopLegend
+	g.p.Legend.Left = g.LeftLegend
 
 	return nil
 }

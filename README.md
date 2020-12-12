@@ -17,10 +17,14 @@ Full flag set:
   -h	Show this help message and exit
   -height float
     	The height of the output figure (default 500)
+  -left-legend
+    	Display legend on left edge of plot (default is on right edge)
   -o string
     	The output file name with extension (if empty will be set to ${bench}.png)
   -plots value
     	The plots to generate (options = ["scatter" "avg_line"]). If empty will default to ["scatter" "avg_line"] for numeric data
+  -top-legend
+    	Display legend on top edge of plot (default is on bottom edge)
   -width float
     	The width of the output figure (default 500)
   -x string
